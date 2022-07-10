@@ -90,7 +90,7 @@ const main = async () => {
     connection,
     new Account(payer.secretKey),
     new Account(tokenSwapAccount.secretKey),
-    payer.publicKey,
+    authority,
     tokenAccountA.address,
     tokenAccountB.address,
     tokenPool,
