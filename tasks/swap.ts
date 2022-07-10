@@ -15,7 +15,6 @@ const connection = new Connection(clusterApiUrl('testnet'), 'confirmed');
 const SWAP_PROGRAM_OWNER_FEE_ADDRESS =
   process.env.SWAP_PROGRAM_OWNER_FEE_ADDRESS;
 
-// Pool fees
 const TRADING_FEE_NUMERATOR = 25;
 const TRADING_FEE_DENOMINATOR = 10000;
 const OWNER_TRADING_FEE_NUMERATOR = 5;
@@ -83,23 +82,22 @@ const main = async () => {
     payer.publicKey
   );
 
-  const swapPayer = Keypair.generate();
-  await connection.confirmTransaction(await connection.requestAirdrop(swapPayer.publicKey, 1000000000));
-
   await new Promise(r => setTimeout(r, 2000));
+
+  const tokenAccountPool = await getOrCreateAssociatedTokenAccount(connection, payer, tokenPool, payer.publicKey)
 
   await TokenSwap.createTokenSwap(
     connection,
-    new Account(swapPayer.secretKey),
+    new Account(payer.secretKey),
     new Account(tokenSwapAccount.secretKey),
-    authority,
+    payer.publicKey,
     tokenAccountA.address,
     tokenAccountB.address,
     tokenPool,
     tokenA,
     tokenB,
     feeAccount.address,
-    feeAccount.address,
+    tokenAccountPool.address,
     TOKEN_SWAP_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     TRADING_FEE_NUMERATOR,
@@ -114,12 +112,13 @@ const main = async () => {
     new Numberu64(1),
   )
   
-  const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
-    connection,
-    tokenSwapAccount.publicKey,
-    TOKEN_SWAP_PROGRAM_ID,
-    new Account(swapPayer.secretKey)
-  );
+  
+  // const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
+  //   connection,
+  //   tokenSwapAccount.publicKey,
+  //   TOKEN_SWAP_PROGRAM_ID,
+  //   new Account(payer.secretKey)
+  // );
 
 
 }
