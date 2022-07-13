@@ -25,11 +25,10 @@ const HOST_FEE_DENOMINATOR = 100;
 
 
 const main = async () => {
-  const airdropSignature = await connection.requestAirdrop(
+  await connection.confirmTransaction(await connection.requestAirdrop(
     payer.publicKey,
     LAMPORTS_PER_SOL,
-  );
-  await connection.confirmTransaction(airdropSignature);
+  ));
 
   // Token A, B mints. Mint authority is owner
   const tokenA = await createMint(
@@ -48,16 +47,14 @@ const main = async () => {
     9
   );
 
-  console.log(`Token A mint: ${tokenA}`)
-  console.log(`Token B mint: ${tokenB}`)
-
+  console.log(`Token A mint: ${tokenA}`);
+  console.log(`Token B mint: ${tokenB}`);
 
   // PDA of tokenSwapAccount for token swap program
   const [authority, bumpSeed] = await PublicKey.findProgramAddress(
     [tokenSwapAccount.publicKey.toBuffer()],
     TOKEN_SWAP_PROGRAM_ID,
   );
-
 
   // Mint for token pool. Owner is authority
   const tokenPool = await createMint(connection, payer, authority, null, 2);
@@ -76,7 +73,6 @@ const main = async () => {
     payer.publicKey
   );
 
-
   // Token A, B accounts. For swap to store tokens. Owner is authority
 
   const tokenAccountA = await getOrCreateAssociatedTokenAccount(
@@ -85,7 +81,7 @@ const main = async () => {
     tokenA,
     authority,
     true
-  )
+  );
 
   const tokenAccountB = await getOrCreateAssociatedTokenAccount(
     connection,
@@ -93,14 +89,13 @@ const main = async () => {
     tokenB,
     authority,
     true
-  )
+  );
 
-  console.log(`Swap token account A: ${tokenAccountA.address.toBase58()}`)
-  console.log(`Swap token account B: ${tokenAccountB.address.toBase58()}`)
+  console.log(`Swap token account A: ${tokenAccountA.address.toBase58()}`);
+  console.log(`Swap token account B: ${tokenAccountB.address.toBase58()}`);
 
   await mintTo(connection, payer, tokenA, tokenAccountA.address, payer, 1_000_000);
   await mintTo(connection, payer, tokenB, tokenAccountB.address, payer, 1_000_000);
-
 
   await TokenSwap.createTokenSwap(
     connection,
@@ -126,7 +121,7 @@ const main = async () => {
     HOST_FEE_DENOMINATOR,
     CurveType.ConstantPrice,
     new Numberu64(1),
-  )
+  );
 
   const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
     connection,
@@ -136,32 +131,42 @@ const main = async () => {
   );
 
 
+  const user = Keypair.generate()
+
+  await connection.confirmTransaction(await connection.requestAirdrop(
+    user.publicKey,
+    LAMPORTS_PER_SOL,
+  ));
 
   // User A, B, accounts. For swap to store tokens. Owner is owner
 
   const userAccountA = await getOrCreateAssociatedTokenAccount(
     connection,
-    payer,
+    user,
     tokenA,
-    payer.publicKey,
+    user.publicKey,
     true
-  )
+  );
 
   const userAccountB = await getOrCreateAssociatedTokenAccount(
     connection,
-    payer,
+    user,
     tokenB,
-    payer.publicKey,
+    user.publicKey,
     true
-  )
+  );
 
-  await mintTo(connection, payer, tokenA, userAccountA.address, payer, 10_000);
+  const tokensToMintToUser = 10_000;
+  const AtokensToSwap = 5000;
+  const minBTokensToReceive = 4000;
 
-  console.log(`User account A: ${userAccountA.address.toBase58()}`)
-  console.log(`User account B: ${userAccountB.address.toBase58()}`)
+  await mintTo(connection, user, tokenA, userAccountA.address, payer, tokensToMintToUser);
 
- const swapTransaction = await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(payer.secretKey), 5000, 1)
- console.log(swapTransaction)
+  console.log(`User account A: ${userAccountA.address.toBase58()}`);
+  console.log(`User account B: ${userAccountB.address.toBase58()}`);
+
+ const swapTransaction = await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(user.secretKey), AtokensToSwap, minBTokensToReceive);
+ console.log(swapTransaction);
 }
 
 
