@@ -161,7 +161,7 @@ const main = async () => {
   console.log(`User account A: ${userAccountA.address.toBase58()}`)
   console.log(`User account B: ${userAccountB.address.toBase58()}`)
 
-  await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, tokenAccountPool.address, new Account(owner.secretKey), 5000, 5000)
+  await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(owner.secretKey), 5000, 5000)
 
 }
 
