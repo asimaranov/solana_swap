@@ -2,15 +2,15 @@ import { Keypair, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/w
 import { struct, u8 } from '@solana/buffer-layout';
 import { publicKey } from '@solana/buffer-layout-utils';
 import { Connection, clusterApiUrl, Account, PublicKey } from '@solana/web3.js';
-import { createMint, getOrCreateAssociatedTokenAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { CurveType, Numberu64, TokenSwap, TOKEN_SWAP_PROGRAM_ID } from '@solana/spl-token-swap';
 
 const payer = Keypair.generate();
-const mintAuthority = Keypair.generate();
+const owner = Keypair.generate();
 
 const tokenSwapAccount = Keypair.generate();
 
-const connection = new Connection(clusterApiUrl('testnet'), 'confirmed');
+const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
 const SWAP_PROGRAM_OWNER_FEE_ADDRESS =
   process.env.SWAP_PROGRAM_OWNER_FEE_ADDRESS;
@@ -25,18 +25,6 @@ const HOST_FEE_NUMERATOR = 20;
 const HOST_FEE_DENOMINATOR = 100;
 
 
-async function createToken() {
-
-  const mint = await createMint(
-    connection,
-    payer,
-    mintAuthority.publicKey,
-    null,
-    9
-  );
-  return mint
-}
-
 const main = async () => {
   const airdropSignature = await connection.requestAirdrop(
     payer.publicKey,
@@ -44,47 +32,77 @@ const main = async () => {
   );
   await connection.confirmTransaction(airdropSignature);
 
-  const tokenA = await createToken();
-  const tokenB = await createToken();
-
-  const tokenAccountA = await getOrCreateAssociatedTokenAccount(
+  // Token A, B mints. Mint authority is owner
+  const tokenA = await createMint(
     connection,
     payer,
-    tokenA,
-    payer.publicKey
-  )
-  
-  const tokenAccountB = await getOrCreateAssociatedTokenAccount(
+    owner.publicKey,
+    null,
+    9
+  );
+
+  const tokenB = await createMint(
     connection,
     payer,
-    tokenB,
-    payer.publicKey
-  )
-  console.log(`Token A: ${tokenA}`)
-  console.log(`Token B: ${tokenB}`)
+    owner.publicKey,
+    null,
+    9
+  );
 
-  console.log(`Token account A: ${tokenAccountA.address.toBase58()}`)
-  console.log(`Token account B: ${tokenAccountB.address.toBase58()}`)
+  console.log(`Token A mint: ${tokenA}`)
+  console.log(`Token B mint: ${tokenB}`)
 
 
+  // PDA of tokenSwapAccount for token swap program
   const [authority, bumpSeed] = await PublicKey.findProgramAddress(
     [tokenSwapAccount.publicKey.toBuffer()],
     TOKEN_SWAP_PROGRAM_ID,
   );
 
 
+  // Mint for token pool. Owner is authority
   const tokenPool = await createMint(connection, payer, authority, null, 2);
 
   const feeAccount = await getOrCreateAssociatedTokenAccount(
     connection,
     payer,
     tokenPool,
-    payer.publicKey
+    owner.publicKey
   );
 
-  await new Promise(r => setTimeout(r, 2000));
+  const tokenAccountPool = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenPool,
+    owner.publicKey
+  );
 
-  const tokenAccountPool = await getOrCreateAssociatedTokenAccount(connection, payer, tokenPool, payer.publicKey)
+
+  // Token A, B, accounts. Owner is authority
+
+  const tokenAccountA = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenA,
+    authority,
+    true
+  )
+
+  const tokenAccountB = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenB,
+    authority,
+    true
+  )
+
+  console.log(`Token account A: ${tokenAccountA.address.toBase58()}`)
+  console.log(`Token account B: ${tokenAccountB.address.toBase58()}`)
+
+
+  await mintTo(connection, payer, tokenA, tokenAccountA.address, owner, 1_000_000);
+  await mintTo(connection, payer, tokenB, tokenAccountB.address, owner, 1_000_000);
+
 
   await TokenSwap.createTokenSwap(
     connection,
@@ -111,14 +129,14 @@ const main = async () => {
     CurveType.ConstantPrice,
     new Numberu64(1),
   )
-  
-  
-  // const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
-  //   connection,
-  //   tokenSwapAccount.publicKey,
-  //   TOKEN_SWAP_PROGRAM_ID,
-  //   new Account(payer.secretKey)
-  // );
+
+
+  const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
+    connection,
+    tokenSwapAccount.publicKey,
+    TOKEN_SWAP_PROGRAM_ID,
+    new Account(payer.secretKey)
+  );
 
 
 }
