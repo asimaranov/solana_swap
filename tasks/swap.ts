@@ -138,13 +138,13 @@ const main = async () => {
 
 
 
-  // Token A, B, accounts. For swap to store tokens. Owner is authority
+  // User A, B, accounts. For swap to store tokens. Owner is owner
 
   const userAccountA = await getOrCreateAssociatedTokenAccount(
     connection,
     payer,
     tokenA,
-    authority,
+    owner.publicKey,
     true
   )
 
@@ -152,7 +152,7 @@ const main = async () => {
     connection,
     payer,
     tokenB,
-    authority,
+    owner.publicKey,
     true
   )
 
@@ -161,8 +161,8 @@ const main = async () => {
   console.log(`User account A: ${userAccountA.address.toBase58()}`)
   console.log(`User account B: ${userAccountB.address.toBase58()}`)
 
-  await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(owner.secretKey), 5000, 5000)
-
+ await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(owner.secretKey), 5000, 5000)
+ // Swap instruction exceeds desired slippage limit
 }
 
 
