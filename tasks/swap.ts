@@ -78,7 +78,7 @@ const main = async () => {
   );
 
 
-  // Token A, B, accounts. Owner is authority
+  // Token A, B accounts. For swap to store tokens. Owner is authority
 
   const tokenAccountA = await getOrCreateAssociatedTokenAccount(
     connection,
@@ -96,12 +96,12 @@ const main = async () => {
     true
   )
 
-  console.log(`Token account A: ${tokenAccountA.address.toBase58()}`)
-  console.log(`Token account B: ${tokenAccountB.address.toBase58()}`)
-
+  console.log(`Swap token account A: ${tokenAccountA.address.toBase58()}`)
+  console.log(`Swap token account B: ${tokenAccountB.address.toBase58()}`)
 
   await mintTo(connection, payer, tokenA, tokenAccountA.address, owner, 1_000_000);
   await mintTo(connection, payer, tokenB, tokenAccountB.address, owner, 1_000_000);
+
 
   await TokenSwap.createTokenSwap(
     connection,
@@ -135,6 +135,44 @@ const main = async () => {
     TOKEN_SWAP_PROGRAM_ID,
     new Account(payer.secretKey)
   );
+
+
+
+  // Token A, B, accounts. For swap to store tokens. Owner is authority
+
+  const userAccountA = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenA,
+    authority,
+    true
+  )
+
+  const userAccountB = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenB,
+    authority,
+    true
+  )
+
+  await mintTo(connection, payer, tokenA, userAccountA.address, owner, 10_000);
+
+  console.log(`User account A: ${userAccountA.address.toBase58()}`)
+  console.log(`User account B: ${userAccountB.address.toBase58()}`)
+
+  const depositorPoolAccount = await getOrCreateAssociatedTokenAccount(
+    connection,
+    payer,
+    tokenPool,
+    owner.publicKey,
+    true
+  )
+
+  const userTransferAuthority = Keypair.generate();
+
+  fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, tokenAccountPool.address, new Account(userTransferAuthority.secretKey), 5000, 5000)
+    
 
 }
 
