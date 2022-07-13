@@ -6,7 +6,6 @@ import { approve, createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_P
 import { CurveType, Numberu64, TokenSwap, TOKEN_SWAP_PROGRAM_ID } from '@solana/spl-token-swap';
 
 const payer = Keypair.generate();
-const owner = Keypair.generate();
 
 const tokenSwapAccount = Keypair.generate();
 
@@ -36,7 +35,7 @@ const main = async () => {
   const tokenA = await createMint(
     connection,
     payer,
-    owner.publicKey,
+    payer.publicKey,
     null,
     9
   );
@@ -44,7 +43,7 @@ const main = async () => {
   const tokenB = await createMint(
     connection,
     payer,
-    owner.publicKey,
+    payer.publicKey,
     null,
     9
   );
@@ -67,14 +66,14 @@ const main = async () => {
     connection,
     payer,
     tokenPool,
-    owner.publicKey
+    payer.publicKey
   );
 
   const tokenAccountPool = await getOrCreateAssociatedTokenAccount(
     connection,
     payer,
     tokenPool,
-    owner.publicKey
+    payer.publicKey
   );
 
 
@@ -99,8 +98,8 @@ const main = async () => {
   console.log(`Swap token account A: ${tokenAccountA.address.toBase58()}`)
   console.log(`Swap token account B: ${tokenAccountB.address.toBase58()}`)
 
-  await mintTo(connection, payer, tokenA, tokenAccountA.address, owner, 1_000_000);
-  await mintTo(connection, payer, tokenB, tokenAccountB.address, owner, 1_000_000);
+  await mintTo(connection, payer, tokenA, tokenAccountA.address, payer, 1_000_000);
+  await mintTo(connection, payer, tokenB, tokenAccountB.address, payer, 1_000_000);
 
 
   await TokenSwap.createTokenSwap(
@@ -144,7 +143,7 @@ const main = async () => {
     connection,
     payer,
     tokenA,
-    owner.publicKey,
+    payer.publicKey,
     true
   )
 
@@ -152,17 +151,17 @@ const main = async () => {
     connection,
     payer,
     tokenB,
-    owner.publicKey,
+    payer.publicKey,
     true
   )
 
-  await mintTo(connection, payer, tokenA, userAccountA.address, owner, 10_000);
+  await mintTo(connection, payer, tokenA, userAccountA.address, payer, 10_000);
 
   console.log(`User account A: ${userAccountA.address.toBase58()}`)
   console.log(`User account B: ${userAccountB.address.toBase58()}`)
 
- await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(owner.secretKey), 5000, 1)
-
+ const swapTransaction = await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(payer.secretKey), 5000, 1)
+ console.log(swapTransaction)
 }
 
 
