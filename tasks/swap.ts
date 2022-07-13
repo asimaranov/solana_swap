@@ -2,7 +2,7 @@ import { Keypair, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/w
 import { struct, u8 } from '@solana/buffer-layout';
 import { publicKey } from '@solana/buffer-layout-utils';
 import { Connection, clusterApiUrl, Account, PublicKey } from '@solana/web3.js';
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { approve, createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { CurveType, Numberu64, TokenSwap, TOKEN_SWAP_PROGRAM_ID } from '@solana/spl-token-swap';
 
 const payer = Keypair.generate();
@@ -161,18 +161,7 @@ const main = async () => {
   console.log(`User account A: ${userAccountA.address.toBase58()}`)
   console.log(`User account B: ${userAccountB.address.toBase58()}`)
 
-  const depositorPoolAccount = await getOrCreateAssociatedTokenAccount(
-    connection,
-    payer,
-    tokenPool,
-    owner.publicKey,
-    true
-  )
-
-  const userTransferAuthority = Keypair.generate();
-
-  fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, tokenAccountPool.address, new Account(userTransferAuthority.secretKey), 5000, 5000)
-    
+  await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, tokenAccountPool.address, new Account(owner.secretKey), 5000, 5000)
 
 }
 
