@@ -103,7 +103,6 @@ const main = async () => {
   await mintTo(connection, payer, tokenA, tokenAccountA.address, owner, 1_000_000);
   await mintTo(connection, payer, tokenB, tokenAccountB.address, owner, 1_000_000);
 
-
   await TokenSwap.createTokenSwap(
     connection,
     new Account(payer.secretKey),
@@ -130,14 +129,12 @@ const main = async () => {
     new Numberu64(1),
   )
 
-
   const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
     connection,
     tokenSwapAccount.publicKey,
     TOKEN_SWAP_PROGRAM_ID,
     new Account(payer.secretKey)
   );
-
 
 }
 
