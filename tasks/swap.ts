@@ -1,8 +1,6 @@
-import { Keypair, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { struct, u8 } from '@solana/buffer-layout';
-import { publicKey } from '@solana/buffer-layout-utils';
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Connection, clusterApiUrl, Account, PublicKey } from '@solana/web3.js';
-import { approve, createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { CurveType, Numberu64, TokenSwap, TOKEN_SWAP_PROGRAM_ID } from '@solana/spl-token-swap';
 
 const payer = Keypair.generate();
@@ -97,7 +95,7 @@ const main = async () => {
   await mintTo(connection, payer, tokenA, tokenAccountA.address, payer, 1_000_000);
   await mintTo(connection, payer, tokenB, tokenAccountB.address, payer, 1_000_000);
 
-  await TokenSwap.createTokenSwap(
+  const tokenSwap = await TokenSwap.createTokenSwap(
     connection,
     new Account(payer.secretKey),
     new Account(tokenSwapAccount.secretKey),
@@ -122,14 +120,6 @@ const main = async () => {
     CurveType.ConstantPrice,
     new Numberu64(1),
   );
-
-  const fetchedTokenSwap = await TokenSwap.loadTokenSwap(
-    connection,
-    tokenSwapAccount.publicKey,
-    TOKEN_SWAP_PROGRAM_ID,
-    new Account(payer.secretKey)
-  );
-
 
   const user = Keypair.generate()
 
@@ -165,7 +155,7 @@ const main = async () => {
   console.log(`User account A: ${userAccountA.address.toBase58()}`);
   console.log(`User account B: ${userAccountB.address.toBase58()}`);
 
- const swapTransaction = await fetchedTokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(user.secretKey), AtokensToSwap, minBTokensToReceive);
+ const swapTransaction = await tokenSwap.swap(userAccountA.address, tokenAccountA.address, tokenAccountB.address, userAccountB.address, feeAccount.address, new Account(user.secretKey), AtokensToSwap, minBTokensToReceive);
  console.log(swapTransaction);
 }
 
